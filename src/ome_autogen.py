@@ -5,7 +5,7 @@ import shutil
 from typing import Generator, Iterable, List, Set, Union
 
 import black
-import isort
+import isort.api
 from xmlschema import XMLSchema, qnames
 from xmlschema.validators import (
     XsdAnyAttribute,
@@ -40,7 +40,7 @@ def black_format(text, line_length=79):
 
 
 def sort_imports(text):
-    return isort.SortImports(file_contents=text).output
+    return isort.api.sort_code_string(text)
 
 
 def sort_types(el):
