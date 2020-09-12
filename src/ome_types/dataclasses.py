@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import MISSING, fields
+import os
+from dataclasses import MISSING, asdict, fields
 from datetime import datetime
 from enum import Enum
 from textwrap import indent
@@ -12,6 +13,8 @@ from pydantic.dataclasses import _process_class
 
 if TYPE_CHECKING:
     from pydantic.dataclasses import DataclassType
+
+    from ome_types.model.ome import OME
 
 
 ureg = pint.UnitRegistry(auto_reduce_dimensions=True)
@@ -158,6 +161,27 @@ def modify_repr(_cls: Type[Any]) -> None:
     setattr(_cls, "__repr__", new_repr)
 
 
+def add_xml_converters(_cls: Type["OME"]) -> None:
+    def from_xml(cls: Type["OME"], xml: str) -> "OME":
+        from ome_types.schema import to_dict
+
+        xml = os.fspath(xml)
+        d = to_dict(xml)
+        for key in list(d.keys()):
+            if key.startswith(("xml", "xsi")):
+                d.pop(key)
+
+        return cls(**d)  # type: ignore
+
+    def to_xml(self: "OME") -> str:
+        from ome_types.schema import to_xml
+
+        return to_xml(self)
+
+    setattr(_cls, "from_xml", classmethod(from_xml))
+    setattr(_cls, "to_xml", to_xml)
+
+
 def ome_dataclass(
     _cls: Optional[Type[Any]] = None,
     *,
@@ -179,6 +203,10 @@ def ome_dataclass(
             setattr(cls, "validate_id", validate_id)
         modify_post_init(cls)
         add_quantities(cls)
+        setattr(_cls, "to_dict", asdict)  # TODO: this is not recursive
+
+        if cls.__name__ == "OME":
+            add_xml_converters(cls)
         if not repr:
             modify_repr(cls)
         return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
