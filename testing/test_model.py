@@ -5,7 +5,7 @@ from xml.dom import minidom
 import pytest
 from xmlschema.validators.exceptions import XMLSchemaValidationError
 
-from ome_types import from_xml, model, to_xml
+from ome_types import OME, model
 from ome_types.schema import NS_OME, URI_OME, get_schema
 
 # Import ElementTree from one central module to avoid problems passing Elements around,
@@ -73,9 +73,9 @@ def test_read(xml):
 
     if true_stem(xml) in SHOULD_RAISE_READ:
         with pytest.raises(XMLSchemaValidationError):
-            assert from_xml(xml)
+            assert OME.from_xml(xml)
     else:
-        assert from_xml(xml)
+        assert OME.from_xml(xml)
 
 
 @pytest.mark.parametrize("xml", xml_roundtrip, ids=true_stem)
@@ -106,7 +106,7 @@ def test_roundtrip(xml):
         return xml_out
 
     original = canonicalize(xml, True)
-    ours = canonicalize(to_xml(from_xml(xml)), False)
+    ours = canonicalize(OME.from_xml(xml).to_xml(), False)
     assert ours == original
 
 
